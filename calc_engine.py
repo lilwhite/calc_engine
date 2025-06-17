@@ -155,11 +155,13 @@ class CalcEngine:
                 stack.append(res)
         return stack[0]
 
-# CLI UI with spinner animation
+# CLI UI with ASCII animation at startup
 if __name__ == '__main__':
     engine = CalcEngine()
-    # ASCII banner animation at startup
-    banner = [
+    # Clear screen
+    os.system('cls' if os.name == 'nt' else 'clear')
+    # ASCII banner frames for animation
+    base_banner = [
         r"  _____      _            _      _            ",
         r" / ____|    | |          | |    | |           ",
         r"| |     __ _| | ___ _   _| | ___| |_ ___  ___ ",
@@ -167,10 +169,25 @@ if __name__ == '__main__':
         r"| |___| (_| | | (__| |_| | |  __/ ||  __/\__ \\",
         r" \_____\__,_|_|\___|\__,_|_|\___|\__\___||___/",
     ]
-    for line in banner:
-        print(line)
-        time.sleep(0.1)
-    print("CalcEngine CLI (with spinner). Enter digits, operators (+ - * /), '=' to evaluate, 'c' to clear, 'q' to quit.")
+    width = 60
+    frames = []
+    # generate sliding frames
+    for offset in range(-len(base_banner[0]), width):
+        lines = []
+        for line in base_banner:
+            if offset < 0:
+                visible = line[-offset:]
+            else:
+                visible = ' ' * offset + line
+            lines.append(visible)
+        frames.append("\n".join(lines))
+    # play animation forward and backward
+    for frame in frames + frames[::-1]:
+        print(frame)
+        time.sleep(0.03)
+        os.system('cls' if os.name == 'nt' else 'clear')
+    # After animation, show prompt header
+    print("CalcEngine CLI. Enter digits, operators (+ - * /), '=' to evaluate, 'c' to clear, 'q' to quit.")
     while True:
         prompt = f"[{engine._entry_str}] > "
         key = input(prompt).strip()
