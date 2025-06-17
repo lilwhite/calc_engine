@@ -5,16 +5,25 @@ from decimal import Decimal
 class CalcEngine:
     def __init__(self):
         self.current = Fraction(0)      # operando actual
-        self.stored = None             # operando previo
-        self.pending = None            # operador pendiente: '+','-','*','/'
-        self.reset_next = False        # indica que el próximo dígito reinicia la entrada
-
+        self.stored = None              # operando previo
+        self.pending = None             # operador pendiente: '+','-','*','/'
+        self.reset_next = False         # indica que el próximo dígito reinicia la entrada
+        self._entry_str = '0'           # añadimos un string para construir el número dígito a dígito
+    
     def process_digit(self, d: str):
         if self.reset_next:
-            self.current = Fraction(0)
+            # comenzamos nueva entrada
+            self._entry_str = '0'
             self.reset_next = False
-        # concatenar dígitos y punto decimal (usar decimal.Decimal o manejar strings)
-
+        # si es el primer 0 y viene un dígito distinto de '.', lo reemplazamos
+        if self._entry_str == '0' and d != '.':
+            self._entry_str = d
+        else:
+            self._entry_str += d
+        # convertimos la cadena a Fraction (sin decimales por ahora)
+        # para soportar decimales habría que parsear como Decimal
+        self.current = Fraction(int(self._entry_str))
+        
     def process_operator(self, op: str):
         if self.pending is not None:
             self._apply_pending()
