@@ -1,4 +1,5 @@
 from fractions import Fraction
+import time
 
 class CalcEngine:
     """
@@ -154,12 +155,25 @@ class CalcEngine:
                 stack.append(res)
         return stack[0]
 
-# Simple CLI UI stub
+# CLI UI with spinner animation
 if __name__ == '__main__':
     engine = CalcEngine()
-    print("CalcEngine CLI. Enter digits, operators (+ - * /), '=' to evaluate, 'c' to clear, 'q' to quit.")
+    # ASCII banner animation at startup
+    banner = [
+        r"  _____      _            _      _            ",
+        r" / ____|    | |          | |    | |           ",
+        r"| |     __ _| | ___ _   _| | ___| |_ ___  ___ ",
+        r"| |    / _` | |/ __| | | | |/ _ \ __/ _ \/ __|",
+        r"| |___| (_| | | (__| |_| | |  __/ ||  __/\__ \\",
+        r" \_____\__,_|_|\___|\__,_|_|\___|\__\___||___/",
+    ]
+    for line in banner:
+        print(line)
+        time.sleep(0.1)
+    print("CalcEngine CLI (with spinner). Enter digits, operators (+ - * /), '=' to evaluate, 'c' to clear, 'q' to quit.")
     while True:
-        key = input(f"[{engine._entry_str}] > ")
+        prompt = f"[{engine._entry_str}] > "
+        key = input(prompt).strip()
         if key == 'q':
             break
         elif key == 'c':
@@ -170,7 +184,7 @@ if __name__ == '__main__':
             engine.process_backspace()
         elif key == '+/-':
             engine.process_plus_minus()
-        elif key in '+-*/':
+        elif key in ('+', '-', '*', '/'):
             engine.process_operator(key)
         elif key == '=':
             engine.process_equals()
