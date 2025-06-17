@@ -39,7 +39,7 @@ A lightweight, terminal-based calculator engine with support for:
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/yourusername/calcmodule.git
+   git clone https://github.com/lilwhite/calc_engine.git
    cd calcmodule
    ```
 2. (Optional) Create and activate a virtual environment:
