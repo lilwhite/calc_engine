@@ -1,61 +1,131 @@
 import pytest
+from fractions import Fraction
 
-from input import InputBuffer, capture_keypress, read_input_line
+from calc_engine import CalcEngine
 
 @ pytest.fixture
-def buffer():
-    """Fixture that returns a fresh InputBuffer instance for each test."""
-    return InputBuffer()
+def engine():
+    return CalcEngine()
+
+# Basic state tests
+
+def test_initial_state(engine):
+    assert engine.current == Fraction(0)
+    assert engine._entry_str == '0'
+    assert engine._tokens == []
+    assert engine.error is False
+
+# Digit and decimal input tests
+
+def test_multi_digit_input(engine):
+    for d in ['1', '2', '3']:
+        engine.process_digit(d)
+    assert engine._entry_str == '123'
+    assert engine.current == Fraction(123)
 
 
-def test_append_single_character(buffer):
-    buffer.append('a')
-    assert buffer.get_contents() == 'a'
+def test_decimal_input(engine):
+    for d in ['0', '.', '5', '2']:
+        engine.process_digit(d)
+    assert engine._entry_str == '0.52'
+    assert engine.current == Fraction('0.52')
 
 
-def test_append_invalid_string_raises(buffer):
-    with pytest.raises(ValueError):
-        buffer.append('ab')
-    with pytest.raises(ValueError):
-        buffer.append('')
+def test_max_length_limit(engine):
+    for _ in range(engine.MAX_ENTRY_LENGTH + 5):
+        engine.process_digit('9')
+    assert len(engine._entry_str) == engine.MAX_ENTRY_LENGTH
+    # value corresponds to repeated '9'
+    assert engine.current == Fraction(int('9'*engine.MAX_ENTRY_LENGTH))
+
+# Operator precedence and evaluation
+
+def test_operator_precedence(engine):
+    # 1 + 2 * 3 = 7
+    for ch in '1': engine.process_digit(ch)
+    engine.process_operator('+')
+    for ch in '2': engine.process_digit(ch)
+    engine.process_operator('*')
+    for ch in '3': engine.process_digit(ch)
+    engine.process_equals()
+    assert engine.current == Fraction(7)
 
 
-def test_get_contents_accumulates(buffer):
-    for ch in 'Hello':
-        buffer.append(ch)
-    assert buffer.get_contents() == 'Hello'
+def test_left_to_right_same_precedence(engine):
+    # 6 / 3 * 2 = (6/3)*2 = 4
+    for ch in '6': engine.process_digit(ch)
+    engine.process_operator('/')
+    for ch in '3': engine.process_digit(ch)
+    engine.process_operator('*')
+    for ch in '2': engine.process_digit(ch)
+    engine.process_equals()
+    assert engine.current == Fraction(4)
+
+# Clear functions
+
+def test_clear_entry(engine):
+    for ch in '45': engine.process_digit(ch)
+    engine.process_clear_entry()
+    assert engine._entry_str == '0'
+    assert engine.current == Fraction(0)
 
 
-def test_clear_empties_buffer(buffer):
-    for ch in 'Test':
-        buffer.append(ch)
-    buffer.clear()
-    assert buffer.get_contents() == ''
+def test_clear_all(engine):
+    engine.process_digit('9')
+    engine.process_operator('+')
+    engine.process_digit('1')
+    engine.process_clear()
+    assert engine._entry_str == '0'
+    assert engine._tokens == []
+    assert engine.current == Fraction(0)
+    assert engine.error is False
+
+# Backspace
+
+def test_backspace(engine):
+    for ch in '123': engine.process_digit(ch)
+    engine.process_backspace()
+    assert engine._entry_str == '12'
+    assert engine.current == Fraction(12)
 
 
-def test_capture_keypress(buffer):
-    capture_keypress(buffer, 'x')
-    assert buffer.get_contents() == 'x'
+def test_backspace_to_zero(engine):
+    engine.process_digit('5')
+    engine.process_backspace()
+    assert engine._entry_str == '0'
+    assert engine.current == Fraction(0)
 
+# Plus-minus toggle
 
-def test_read_input_line_no_prompt(monkeypatch):
-    # Simulate input() without prompt
-    monkeypatch.setattr('builtins.input', lambda: 'user input')
-    result = read_input_line()
-    assert result == 'user input'
+def test_plus_minus_toggle(engine):
+    for ch in '42': engine.process_digit(ch)
+    engine.process_plus_minus()
+    assert engine.current == Fraction(-42)
+    assert engine._entry_str.startswith('-')
 
+# Division by zero error
 
-def test_read_input_line_with_prompt(monkeypatch):
-    # Simulate input() with a prompt
-    prompt = 'Enter: '
-    captured = {'prompt': None}
+def test_division_by_zero_sets_error(engine):
+    # simulate expression 5 / 0 = error
+    engine.process_digit('5')
+    engine.process_operator('/')
+    engine.process_digit('0')
+    engine.process_equals()
+    assert engine.error is True
+    assert engine.current == Fraction(0)
 
-    def fake_input(p=None):
-        captured['prompt'] = p
-        return 'prompted input'
+# After error, digit resets engine
 
-    monkeypatch.setattr('builtins.input', fake_input)
-    result = read_input_line(prompt)
+def test_digit_after_error_resets(engine):
+    engine.process_digit('5')
+    engine.process_operator('/')
+    engine.process_digit('0')
+    engine.process_equals()
+    # now error True
+    engine.process_digit('7')
+    assert engine.error is False
+    assert engine._entry_str == '7'
+    assert engine.current == Fraction(7)
 
-    assert captured['prompt'] == prompt
-    assert result == 'prompted input'
+if __name__ == '__main__':
+    pytest.main()
