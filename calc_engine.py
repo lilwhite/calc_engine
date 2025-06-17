@@ -1,4 +1,6 @@
 from fractions import Fraction
+import time
+import os
 
 class CalcEngine:
     """
@@ -154,12 +156,42 @@ class CalcEngine:
                 stack.append(res)
         return stack[0]
 
-# Simple CLI UI stub
+# CLI UI with ASCII animation at startup
 if __name__ == '__main__':
     engine = CalcEngine()
+    # Clear screen
+    os.system('cls' if os.name == 'nt' else 'clear')
+    # ASCII banner frames for animation
+    base_banner = [
+        r"  _____      _            _      _            ",
+        r" / ____|    | |          | |    | |           ",
+        r"| |     __ _| | ___ _   _| | ___| |_ ___  ___ ",
+        r"| |    / _` | |/ __| | | | |/ _ \ __/ _ \/ __|",
+        r"| |___| (_| | | (__| |_| | |  __/ ||  __/\__ \\",
+        r" \_____\__,_|_|\___|\__,_|_|\___|\__\___||___/",
+    ]
+    width = 60
+    frames = []
+    # generate sliding frames
+    for offset in range(-len(base_banner[0]), width):
+        lines = []
+        for line in base_banner:
+            if offset < 0:
+                visible = line[-offset:]
+            else:
+                visible = ' ' * offset + line
+            lines.append(visible)
+        frames.append("\n".join(lines))
+    # play animation forward and backward
+    for frame in frames + frames[::-1]:
+        print(frame)
+        time.sleep(0.03)
+        os.system('cls' if os.name == 'nt' else 'clear')
+    # After animation, show prompt header
     print("CalcEngine CLI. Enter digits, operators (+ - * /), '=' to evaluate, 'c' to clear, 'q' to quit.")
     while True:
-        key = input(f"[{engine._entry_str}] > ")
+        prompt = f"[{engine._entry_str}] > "
+        key = input(prompt).strip()
         if key == 'q':
             break
         elif key == 'c':
@@ -170,7 +202,7 @@ if __name__ == '__main__':
             engine.process_backspace()
         elif key == '+/-':
             engine.process_plus_minus()
-        elif key in '+-*/':
+        elif key in ('+', '-', '*', '/'):
             engine.process_operator(key)
         elif key == '=':
             engine.process_equals()
