@@ -1,38 +1,42 @@
-from typing import Optional
-
-class InputBuffer:
-    """
-    Buffers individual character inputs before submitting the full line.
-    """
-    def __init__(self) -> None:
-        # Internal list to store buffered characters
-        self._buffer = []  # List[str]
-
-    def append(self, char: str) -> None:
-        """Adds a single character to the input buffer."""
-        if len(char) != 1:
-            raise ValueError("Only a single character is allowed.")
-        self._buffer.append(char)
-
-    def get_contents(self) -> str:
-        """Returns the complete accumulated string."""
-        return ''.join(self._buffer)
-
-    def clear(self) -> None:
-        """Clears the input buffer."""
-        self._buffer.clear()
+from fractions import Fraction
+from decimal import Decimal
 
 
-def capture_keypress(buffer: InputBuffer, char: str) -> None:
-    """Convenience function to add a character to the buffer."""
-    buffer.append(char)
+class CalcEngine:
+    def __init__(self):
+        self.current = Fraction(0)      # operando actual
+        self.stored = None             # operando previo
+        self.pending = None            # operador pendiente: '+','-','*','/'
+        self.reset_next = False        # indica que el próximo dígito reinicia la entrada
 
+    def process_digit(self, d: str):
+        if self.reset_next:
+            self.current = Fraction(0)
+            self.reset_next = False
+        # concatenar dígitos y punto decimal (usar decimal.Decimal o manejar strings)
 
-def read_input_line(prompt: Optional[str] = None) -> str:
-    """
-    Reads a full line from standard input. For testing purposes, the input() function
-    can be patched.
-    """
-    if prompt is not None:
-        return input(prompt)
-    return input()
+    def process_operator(self, op: str):
+        if self.pending is not None:
+            self._apply_pending()
+        else:
+            self.stored = self.current
+        self.pending = op
+        self.reset_next = True        # la siguiente entrada empieza un nuevo número
+
+    def process_equals(self):
+        if self.pending is not None:
+            self._apply_pending()
+            self.pending = None
+        self.reset_next = True
+
+    def _apply_pending(self):
+        if self.pending == '+':
+            self.stored += self.current
+        elif self.pending == '-':
+            self.stored -= self.current
+        elif self.pending == '*':
+            self.stored *= self.current
+        elif self.pending == '/':
+            # gestión de división por cero
+            self.stored /= self.current
+        self.current = self.stored
