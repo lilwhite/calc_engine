@@ -1,7 +1,7 @@
 import pytest
 from fractions import Fraction
 
-from calc_engine import CalcEngine
+from input import CalcEngine
 
 @ pytest.fixture
 def engine():
